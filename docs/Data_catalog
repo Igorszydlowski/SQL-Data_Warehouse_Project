@@ -1,0 +1,43 @@
+
+gold.dim_customers
+*purpose - Stores customers detalis enriched witch demographic and geograpihcs data.
+*columns:
+
+Column Name                 |Data Type      |     Description
+------------------------------------------------------------------------------------------------
+customer_key                |INT            |Surrogate key uniquely identyfing each customer record in the dimension table
+customer_id                 |INT            |Unique numerical identifier assigned to each customer
+customer_number             |NVARCHAR(50)   |Alphanumeric identifier representing the customer used for tracking and referncing
+first_name                  |NVARCHAR(50)   |The customer's fisrt name
+last_name                   |NVARCHAR(50)   |The customer's last name
+country                     |NVARCHAR(50)   |The country of residense of Customer e.g. Australia
+material_status             |NVARCHAR(50)   |THe material status of customer e.g. Married,Single
+gender                      |NVARCHAR(50)   |The gender of the cusotmer e.g.Male, Female, n/a
+birth_date                  |DATE           |The date of birth of customer (YYYY-MM-DD) e.g. 1971-01-12
+create_date                 |DATE           |The dateand rime when customer record was created in the system
+
+gold.dim+products
+*Puropose - Provides inforamtion about products and their attributes
+*Columns
+
+Column Name                 |Data Type      |     Description
+---------------------------------------------------------------------------------------------
+product_key                 |INT            |
+product_id                  |INT            |
+product_number              |NVARCHAR(50)   |
+product_name                |NVARCHAR(50)   |
+category_id                 |NVARCHAR(50)   |
+category                    |NVARCHAR(50)   |
+subcategory                 |NVARCHAR(50)   |
+maintanence_required        |NVARCHAR(50)   |
+cost                        |INT            |
+product_line                |NVARCHAR(50)   |
+start_date                  | DATE          |
+
+gold.fact_sales
+*Purpose - Stores transactional sales data for analytical purposes
+*Columns:
+
+Column Name                 |Data Type      |     Description
+-------------------------------------------------------------------------------------------
+
