@@ -22,17 +22,17 @@ gold.dim+products
 
 Column Name                 |Data Type      |     Description
 ---------------------------------------------------------------------------------------------
-product_key                 |INT            |
-product_id                  |INT            |
-product_number              |NVARCHAR(50)   |
-product_name                |NVARCHAR(50)   |
-category_id                 |NVARCHAR(50)   |
-category                    |NVARCHAR(50)   |
-subcategory                 |NVARCHAR(50)   |
-maintanence_required        |NVARCHAR(50)   |
-cost                        |INT            |
-product_line                |NVARCHAR(50)   |
-start_date                  | DATE          |
+product_key                 |INT            |Surrogate key uniquely identyfing each product record in the product dimension table
+product_id                  |INT            |A unique identyfier assigned to the product for internal tracking and referencing
+product_number              |NVARCHAR(50)   |A structured code representing product, often used for categorization inventory 
+product_name                |NVARCHAR(50)   |Descriptive name of product's category 
+category_id                 |NVARCHAR(50)   |A unique identyfier for the product's category
+category                    |NVARCHAR(50)   |The broader classification of the product eg.bikes,components
+subcategory                 |NVARCHAR(50)   |A more detailed classification of the product within the category
+maintanence_required        |NVARCHAR(50)   |Indicated whether the product requieres maintanece eg. yes, no
+cost                        |INT            |The cost or base price of the product 
+product_line                |NVARCHAR(50)   |The specific product line or series to which the product belongs e.g.Road, Mountain
+start_date                  |DATE           |The date when the product became available for sale or use
 
 gold.fact_sales
 *Purpose - Stores transactional sales data for analytical purposes
@@ -40,4 +40,19 @@ gold.fact_sales
 
 Column Name                 |Data Type      |     Description
 -------------------------------------------------------------------------------------------
+order_number                |NVARCHAR(50)   |A unique alphanumeric identyfier for each sales order e.g. SO54496
+product_key                 |INT            |Surrogate key linking the order to the product dimension table
+customer_key                |INT            |Surrogate key linking the order to the product dimension table
+order_date                  |DATE           |The date when the order was placed
+shipping_date               |DATE           |The date when the order was shipped to the customer
+due_date                    |DATE           |The date when the order payment was due
+sales_amount                |INT            |The total monetary value of the sale e.g.25
+quantity                    |INT            |The number of units of the product ordered for the line item e.g.1
+price                       |INT            |The price per unit of the product for the line e.g.25
+
+
+
+
+
+
 
