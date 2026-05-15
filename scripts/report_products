@@ -1,0 +1,80 @@
+/*
+===============================================================================
+Product Report
+===============================================================================
+Purpose:
+    - This report consolidates key product metrics and behaviors.
+
+Highlights:
+    1. Gathers essential fields such as product name, category, subcategory, and cost.
+    2. Segments products by revenue to identify High-Performers, Mid-Range, or Low-Performers.
+    3. Aggregates product-level metrics:
+       - total orders
+       - total sales
+       - total quantity sold
+       - total customers (unique)
+       - lifespan (in months)
+    4. Calculates valuable KPIs:
+       - recency (months since last sale)
+       - average order revenue (AOR)
+       - average monthly revenue
+===============================================================================
+*/
+if object_id( 'gold.report_products', 'V' )is not null
+	drop view gold.report_products;
+go 
+
+CREATE VIEW gold.report_products AS
+
+with base_querry as (
+select 
+p.product_key,
+p.product_id,
+p.product_number,
+p.product_name,
+p.category,
+p.subcategory,
+p.cost,
+count(f.order_number) as total_orders,
+sum(f.sales_amount) as total_sales,
+sum(f.quantity) as total_quantity,
+count(distinct f.customer_key) as total_unique_customers,
+datediff(month, min(f.order_date), max(order_date)) as lifespan,
+max(f.order_date) as last_order
+from gold.fact_sales f
+left join gold.dim_products p
+on f.product_key = p.product_key
+group by 
+  p.product_key,
+    p.product_id,
+    p.product_number,
+    p.product_name,
+    p.category,
+    p.subcategory,
+    p.cost)
+
+select 
+product_key,
+product_name,
+category,
+subcategory,
+cost,
+total_orders,
+total_quantity,
+total_sales,
+case when total_sales > 50000 then 'High Performance'
+	when total_sales >= 20000 then 'Mid-Performance'
+	else 'Low Performance'
+	end as performance,
+total_unique_customers,
+lifespan,
+datediff(month, last_order, getdate()) as recency,
+	CASE 
+		WHEN total_orders = 0 THEN 0
+		ELSE total_sales / total_orders
+	END AS avg_order_revenue,
+	CASE
+		WHEN lifespan = 0 THEN total_sales
+		ELSE total_sales / lifespan
+	END AS avg_monthly_revenue
+from base_querry
