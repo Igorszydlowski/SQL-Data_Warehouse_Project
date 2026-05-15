@@ -1,0 +1,140 @@
+--Change over time--
+select
+year(order_date) as order_year,
+MONTH(order_date) as order_month,
+sum(sales_amount) as total_sales,
+count(distinct customer_key) as total_customers,
+count(quantity) as total_quantity
+from gold.fact_sales
+where order_date IS NOT NULL
+group by year(order_date), MONTH(order_date) 
+order by year(order_date), MONTH(order_date) 
+
+-- running total and moving average--
+select
+order_date,
+total_sales,
+sum(total_sales) over (order by order_date) as running_total_sales,
+avg(average_price) over(order by order_date) as moving_average
+from(
+select
+datetrunc(month, order_Date) as order_date,
+sum(sales_amount) as total_sales,
+avg(price) as average_price
+from gold.fact_sales
+where order_date is not null
+group by datetrunc(month, order_date)
+) t
+
+--yearly performance of products and comparing them to avg sales performance and previous year--
+with yearly_product_sales as 
+(
+select 
+year(f.order_date) as order_year,
+p.product_name,
+sum(f.sales_amount) as current_sales
+from gold.fact_sales f
+left join gold.dim_products p
+on f.product_key = p.product_key
+where f.order_date is not null
+group by year(f.order_date),
+p.product_name
+) 
+select
+order_year,
+product_name,
+current_sales,
+avg(current_sales) over (partition by product_name) as avg_sales,
+current_sales - avg(current_sales) over (partition by product_name)  as diff_avg,
+case when current_sales - avg(current_sales) over (partition by product_name) > 0 then 'Above avg'
+	when current_sales - avg(current_sales) over (partition by product_name) < 0 then 'Below avg'
+	else 'Avg'
+	end avg_change,
+lag(current_sales) over (partition by product_name order by order_year asc) as py_sales,
+current_sales - lag(current_sales) over (partition by product_name order by order_year asc) as diff_sales,
+case when current_sales - lag(current_sales) over (partition by product_name order by order_year asc) > 0 then 'Increase'
+	when current_sales - lag(current_sales) over (partition by product_name order by order_year asc) < 0 then 'Decrease'
+	else 'No Change'
+	end py_change
+from yearly_product_sales
+order by product_name, order_year
+
+-- Contribution of categories comparing to overall--
+with category_sales as 
+(
+select
+p.category,
+sum(s.sales_amount) as total_sales
+from gold.fact_sales s 
+left join gold.dim_products p 
+on p.product_key = s.product_key
+group by p.category
+)
+select
+category, 
+total_sales,
+sum(total_sales) over () as overall_sales,
+concat(round((cast(total_sales as float) / sum(total_sales) over ()) *100,2),'%') as perc_of_sales
+from category_sales
+order by total_sales desc
+
+-- segmentation products into cost ranges--
+
+with product_segments as
+(
+select 
+product_key,
+product_name,
+cost,
+case when cost < 100 then 'below 100'
+	when cost between 100 and 500 then '100-500'
+	when cost between 500 and 1000 then '500-1000'
+	else 'above 1000'
+	end as cost_range
+
+from gold.dim_products
+)
+
+select
+cost_range,
+count(product_key) as total_products
+from product_segments
+group by cost_range
+order by total_products desc
+
+
+/*grouping customers into 3 segments based on their behavior
+ -VIP customers with at least 12 months of history and spending at least 5000$
+ -REGULAR cusotmers with at least 12 months of history and spending less than 5000%
+ -NEW customers with less than 12 months of lifespan
+* finding total number of customers of each group
+*/
+with customer_spending as 
+(
+select
+c.customer_key,
+sum(s.sales_amount) as total_spending,
+min(s.order_date) as first_order,
+max(s.order_date) as last_order,
+datediff(month, min(s.order_date), max(s.order_date)) as lifespan
+from gold.fact_sales s
+left join gold.dim_customers c
+on s.customer_key = c.customer_key
+group by c.customer_key
+)
+
+select
+customer_segment,
+count(customer_key) as total_customers
+from (
+	select
+	customer_key,
+	total_spending,
+	lifespan,
+	case when lifespan >= 12 and total_spending > 5000 then 'VIP'
+		when lifespan >= 12 and total_spending <= 5000 then 'REGULAR'
+		else 'NEW'
+		end as customer_segment
+	from customer_spending) t
+group by customer_segment 
+order by total_customers desc
